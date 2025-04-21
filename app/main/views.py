@@ -107,9 +107,8 @@ def teacher(request):
 
             try:
                 leave = Leave.objects.get(id=ObjectId(leave_id))
-
                 staff_type = user.staff_type
-                leave.comment = comment  # Save comment
+                leave.comment = comment
 
                 if action == "approve":
                     if staff_type == "tutor":
@@ -119,7 +118,6 @@ def teacher(request):
                     elif staff_type == "hod":
                         leave.hod_approved = True
                     messages.success(request, f"Leave approved by {staff_type} for {leave.full_name}")
-
                 elif action == "reject":
                     if staff_type == "tutor":
                         leave.tutor_approved = False
@@ -135,6 +133,14 @@ def teacher(request):
                 messages.error(request, "Leave request not found.")
 
         leave_requests = Leave.objects.order_by('-from_date')
+        # Add status to each leave request
+        for req in leave_requests:
+            if user.staff_type == "tutor":
+                req.status = "Approved" if req.tutor_approved else "Rejected" if req.tutor_approved is False else "Pending"
+            elif user.staff_type == "advisor":
+                req.status = "Approved" if req.advisor_approved else "Rejected" if req.advisor_approved is False else "Pending"
+            elif user.staff_type == "hod":
+                req.status = "Approved" if req.hod_approved else "Rejected" if req.hod_approved is False else "Pending"
 
         context = {
             'name': user.full_name,
@@ -144,7 +150,7 @@ def teacher(request):
             'phone': user.phone_number,
             'address': user.address,
             'leave_requests': leave_requests,
-            'user': user  # Needed for staff_type in template
+            'user': user
         }
         return render(request, 'teacher.html', context)
 

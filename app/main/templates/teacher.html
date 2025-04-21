@@ -42,6 +42,7 @@
             <th>Type</th>
             <th>Reason</th>
             <th>OD Form</th>
+            <th>Status</th> <!-- Added Status Column -->
             <th>Action</th>
           </tr>
         </thead>
@@ -62,18 +63,46 @@
               {% endif %}
             </td>
             <td>
-                <form method="post" action="{% url 'teacher' %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="leave_id" value="{{ request.id }}">
-                  <input type="text" name="comment" class="form-control form-control-sm mb-1" placeholder="Comment (optional)">
-                  <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1 w-100">Accept</button>
-                  <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger w-100">Reject</button>
-                </form>
+              <!-- Status Based on Staff Type -->
+              {% if user.staff_type == 'tutor' %}
+                {% if request.tutor_approved == True %}
+                  <span class="status-badge status-approved">Approved</span>
+                {% elif request.tutor_approved == False %}
+                  <span class="status-badge status-rejected">Rejected</span>
+                {% else %}
+                  <span class="status-badge status-pending">Pending</span>
+                {% endif %}
+              {% elif user.staff_type == 'advisor' %}
+                {% if request.advisor_approved == True %}
+                  <span class="status-badge status-approved">Approved</span>
+                {% elif request.advisor_approved == False %}
+                  <span class="status-badge status-rejected">Rejected</span>
+                {% else %}
+                  <span class="status-badge status-pending">Pending</span>
+                {% endif %}
+              {% elif user.staff_type == 'hod' %}
+                {% if request.hod_approved == True %}
+                  <span class="status-badge status-approved">Approved</span>
+                {% elif request.hod_approved == False %}
+                  <span class="status-badge status-rejected">Rejected</span>
+                {% else %}
+                  <span class="status-badge status-pending">Pending</span>
+                {% endif %}
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'teacher' %}">
+                {% csrf_token %}
+                <input type="hidden" name="leave_id" value="{{ request.id }}">
+                <input type="text" name="comment" class="form-control form-control-sm mb-1" placeholder="Comment (optional)">
+                <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1 w-100">Accept</button>
+                <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger w-100">Reject</button>
+              </form>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted">No leave applications submitted yet.</td>
+            <td colspan="9" class="text-center text-muted">No leave applications submitted yet.</td> <!-- Updated colspan to 9 -->
           </tr>
           {% endfor %}
         </tbody>
