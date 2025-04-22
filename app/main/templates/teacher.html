@@ -94,7 +94,6 @@
               <form method="post" action="{% url 'teacher' %}">
                 {% csrf_token %}
                 <input type="hidden" name="leave_id" value="{{ request.id }}">
-                <input type="text" name="comment" class="form-control form-control-sm mb-1" placeholder="Comment (optional)">
                 <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1 w-100">Accept</button>
                 <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger w-100">Reject</button>
               </form>

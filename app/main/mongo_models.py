@@ -33,10 +33,13 @@ class Leave(Document):
     tutor_approved = BooleanField(default=None, null=True)
     advisor_approved = BooleanField(default=None, null=True)
     hod_approved = BooleanField(default=None, null=True)
-    comment = StringField()  # Optional: Teacher comments
+    tutor_comment = StringField(default="", null=True)
+    advisor_comment = StringField(default="", null=True)
+    hod_comment = StringField(default="", null=True)
 
     meta = {
         "collection": "leave_applications"
     }
+
 
 

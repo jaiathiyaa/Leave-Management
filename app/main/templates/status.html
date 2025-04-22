@@ -39,7 +39,6 @@
                 <th>Reason</th>
                 <th>Approval Status</th>
                 <th>OD Form</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -50,16 +49,28 @@
                 <td>{{ leave.reason }}</td>
                 <td>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" {% if leave.tutor_approved %}checked{% endif %} disabled>
-                    <label class="form-check-label">Tutor</label>
+                    {% if leave.tutor_approved == False %}
+                      <span class="text-danger">❌ Tutor</span>
+                    {% else %}
+                      <input class="form-check-input" type="checkbox" {% if leave.tutor_approved %}checked{% endif %} disabled>
+                      <label class="form-check-label">Tutor</label>
+                    {% endif %}
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" {% if leave.advisor_approved %}checked{% endif %} disabled>
-                    <label class="form-check-label">Advisor</label>
+                    {% if leave.advisor_approved == False %}
+                      <span class="text-danger">❌ Advisor</span>
+                    {% else %}
+                      <input class="form-check-input" type="checkbox" {% if leave.advisor_approved %}checked{% endif %} disabled>
+                      <label class="form-check-label">Advisor</label>
+                    {% endif %}
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" {% if leave.hod_approved %}checked{% endif %} disabled>
-                    <label class="form-check-label">HOD</label>
+                    {% if leave.hod_approved == False %}
+                      <span class="text-danger">❌ HOD</span>
+                    {% else %}
+                      <input class="form-check-input" type="checkbox" {% if leave.hod_approved %}checked{% endif %} disabled>
+                      <label class="form-check-label">HOD</label>
+                    {% endif %}
                   </div>
                 </td>
                 <td>
@@ -68,14 +79,6 @@
                   {% else %}
                     —
                   {% endif %}
-                </td>
-                <td>
-                  <div class="d-flex gap-2">
-                    <form action="{% url 'delete_leave' leave.id %}" method="post" onsubmit="return confirm('Are you sure you want to delete this leave application?');">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                    </form>
-                  </div>
                 </td>
               </tr>
               {% endfor %}

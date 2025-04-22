@@ -103,12 +103,18 @@ def teacher(request):
         if request.method == "POST":
             action = request.POST.get("action")
             leave_id = request.POST.get("leave_id")
-            comment = request.POST.get("comment", "")
+            comment = request.POST.get("comment")
 
             try:
                 leave = Leave.objects.get(id=ObjectId(leave_id))
                 staff_type = user.staff_type
-                leave.comment = comment
+                if staff_type == "tutor":
+                    leave.tutor_comment = comment
+                elif staff_type == "advisor":
+                    leave.advisor_comment = comment
+                elif staff_type == "hod":
+                    leave.hod_comment = comment
+
 
                 if action == "approve":
                     if staff_type == "tutor":
@@ -203,6 +209,7 @@ def status(request):
         "leave_entries": leave_entries,
     }
     return render(request, "status.html", context)
+
 
 
 
