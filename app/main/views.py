@@ -1,7 +1,13 @@
 from django.shortcuts import render, redirect
+from django.conf import settings
+from django.http import HttpResponse
+from bson import ObjectId
+
 from .mongo_models import User , Leave
 from django.contrib import messages
 import datetime
+import json
+from django.utils.safestring import mark_safe
 
 # ✅ LOGIN VIEW
 def login(request):
@@ -59,6 +65,22 @@ def leave(request):
         to_date = request.POST.get("to_date")
         reason = request.POST.get("reason")
 
+        try:
+            from_date_parsed = datetime.datetime.strptime(from_date, "%Y-%m-%d").date()
+            to_date_parsed = datetime.datetime.strptime(to_date, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid date format.")
+            return redirect("leave")
+
+        today = datetime.date.today()
+        if from_date_parsed < today or to_date_parsed < today:
+            messages.error(request, "Leave date cannot be in the past.")
+            return redirect("leave")
+
+        if to_date_parsed < from_date_parsed:
+            messages.error(request, "To Date cannot be before From Date.")
+            return redirect("leave")
+
         leave_obj = Leave(
             full_name=user.full_name,
             email=user.email,
@@ -73,6 +95,10 @@ def leave(request):
         # Only attach OD form if it's an OD leave
         if leave_type == "OD" and "od_form" in request.FILES:
             leave_obj.od_form.put(request.FILES["od_form"], content_type=request.FILES["od_form"].content_type)
+        
+        # Only attach Medical form if it's a Sick leave
+        if leave_type == "Sick" and "medical_form" in request.FILES:
+            leave_obj.medical_form.put(request.FILES["medical_form"], content_type=request.FILES["medical_form"].content_type)
 
         leave_obj.save()
 
@@ -138,7 +164,7 @@ def teacher(request):
             except Leave.DoesNotExist:
                 messages.error(request, "Leave request not found.")
 
-        leave_requests = Leave.objects.order_by('-from_date')
+        leave_requests = Leave.objects(department=user.department).order_by('-from_date')
         # Add status to each leave request
         for req in leave_requests:
             if user.staff_type == "tutor":
@@ -164,12 +190,12 @@ def teacher(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
-# ✅ STUDENT PROFILE PAGE
+# ✅ PROFILE PAGE (Student & Staff)
 def profile(request):
-        # Check if the user_email is stored in the session
+    # Check if the user_email is stored in the session
     user_email = request.session.get("user_email")
     if not user_email:
-        messages.error(request, "Please log in to view your leave status.")
+        messages.error(request, "Please log in to view your profile.")
         return redirect("login")
     
     try:
@@ -177,6 +203,7 @@ def profile(request):
         user = User.objects.get(email=user_email)
         
         context = {
+            'user': user,
             'name': user.full_name,
             'register_number': user.register_number,
             'department': user.department,
@@ -255,10 +282,6 @@ def logout_view(request):
     messages.success(request, "Logged out successfully!")
     return redirect("login")
 
-
-from django.http import HttpResponse
-from bson import ObjectId
-
 def download_od(request, leave_id):
     try:
         leave = Leave.objects.get(id=ObjectId(leave_id))
@@ -272,7 +295,19 @@ def download_od(request, leave_id):
         messages.error(request, "OD Form not found.")
     return redirect("status")
 
-from bson import ObjectId
+def download_medical(request, leave_id):
+    try:
+        leave = Leave.objects.get(id=ObjectId(leave_id))
+        if leave.medical_form:
+            file_data = leave.medical_form.read()
+            content_type = leave.medical_form.content_type
+            response = HttpResponse(file_data, content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="Medical_Form_{leave_id}.pdf"'
+            return response
+    except Leave.DoesNotExist:
+        messages.error(request, "Medical Form not found.")
+    return redirect("status")
+
 from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
@@ -288,4 +323,45 @@ def delete_leave(request, leave_id):
         messages.error(request, "Invalid request.")
     return redirect("status")
 
+
+
+def calendar_page(request):
+    return render(request, 'leave_calendar.html')
+
+
+def leave_analytics(request):
+    if request.session.get("role") != "staff":
+        return redirect("login")
+
+    user_email = request.session.get("user_email")
+    if not user_email:
+        return redirect("login")
+
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        return redirect("login")
+
+    # Total leave count
+    total_leaves = Leave.objects(department=user.department).count()
+
+    # Count by department
+    dept_counts = {}
+    for leave in Leave.objects(department=user.department).only('department'):
+        dept = leave.department
+        dept_counts[dept] = dept_counts.get(dept, 0) + 1
+
+    # Count by reason
+    reason_counts = {}
+    for leave in Leave.objects(department=user.department).only('reason'):
+        reason = leave.reason
+        reason_counts[reason] = reason_counts.get(reason, 0) + 1
+
+    context = {
+        'total_leaves': total_leaves,
+        'dept_counts_json': mark_safe(json.dumps(dept_counts)),
+        'reason_counts_json': mark_safe(json.dumps(reason_counts))
+    }
+
+    return render(request, 'analytics.html', context)
 

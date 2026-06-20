@@ -13,6 +13,17 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from mongoengine import connect
 
+import os
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+GOOGLE_OAUTH_CLIENT_SECRET_FILE = os.path.join(BASE_DIR, 'client_secret.json')
+GOOGLE_OAUTH_SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -12,7 +12,7 @@ class User(Document):
     role = StringField(required=True, choices=["student", "staff"])
     staff_type = StringField(choices=["hod", "advisor", "tutor"], null=True)
     department = StringField(required=True, choices=[
-        "computer-science", "mechanical", "civil", "electrical"
+        "computer-science","aids","ece","mechanical", "civil", "eee"
     ])
     
     meta = {
@@ -24,22 +24,31 @@ class Leave(Document):
     email = EmailField(required=True)
     register_number = StringField(required=True)
     department = StringField(required=True)
-    leave_type = StringField(required=True, choices=["Casual", "Sick", "OD"])
+    leave_type = StringField(required=True, choices=["Casual", "Sick", "OD","Emergency"])
     from_date = DateField(required=True)
     to_date = DateField(required=True)
     reason = StringField(required=True)
     od_form = FileField()  # For OD uploads
+    medical_form = FileField()  
     status = StringField(default='Pending')
+    is_certificate_valid = BooleanField(default=False)
+    certificate_validation_message = StringField(default="", null=True)
+
     tutor_approved = BooleanField(default=None, null=True)
     advisor_approved = BooleanField(default=None, null=True)
     hod_approved = BooleanField(default=None, null=True)
     tutor_comment = StringField(default="", null=True)
     advisor_comment = StringField(default="", null=True)
-    hod_comment = StringField(default="", null=True)
+    hod_comment = StringField(default="", null=True) # List of {"role": "Tutor", "approved": True/False, "comment": "...", "timestamp": ...}
 
     meta = {
         "collection": "leave_applications"
     }
 
 
+class AcademicHoliday(Document):
+    date = DateField(required=True, unique=True)
+    name = StringField(required=True, max_length=100)
 
+    def __str__(self):
+        return f"{self.name} ({self.date})"

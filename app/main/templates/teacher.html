@@ -1,113 +1,217 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Teacher Dashboard - Leave Requests</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <title>Staff Dashboard - Leave Applications</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <style>
-    body { background-color: #f4f6f9; }
-    .card { border-radius: 1rem; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
-    .status-badge { padding: 0.3rem 0.8rem; border-radius: 1rem; font-size: 0.85rem; }
-    .status-approved { background-color: #d4edda; color: #155724; }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-rejected { background-color: #f8d7da; color: #721c24; }
+    .staff-profile-card {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      color: white;
+      border: none;
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(49, 46, 129, 0.2);
+    }
+    .staff-profile-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a5b4fc;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container">
-    <a class="navbar-brand" href="#">Leave Portal</a>
-    <div class="collapse navbar-collapse justify-content-end">
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link active" href="{% url 'logout' %}">Logout</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
 
-<div class="container my-5">
-  <h2 class="mb-4 text-center">📋 Teacher Leave Approval Dashboard</h2>
-
-  <div class="card p-4">
-    <h5 class="mb-3">Leave Applications</h5>
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Student</th>
-            <th>Reg No</th>
-            <th>Dept</th>
-            <th>Date Range</th>
-            <th>Type</th>
-            <th>Reason</th>
-            <th>OD Form</th>
-            <th>Status</th> <!-- Added Status Column -->
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for request in leave_requests %}
-          <tr>
-            <td>{{ request.full_name }}</td>
-            <td>{{ request.register_number }}</td>
-            <td>{{ request.department }}</td>
-            <td>{{ request.from_date }} to {{ request.to_date }}</td>
-            <td>{{ request.leave_type }}</td>
-            <td>{{ request.reason }}</td>
-            <td>
-              {% if request.od_form %}
-                <a href="{% url 'download_od' request.id %}" class="btn btn-sm btn-outline-primary">Download</a>
-              {% else %}
-                —
-              {% endif %}
-            </td>
-            <td>
-              <!-- Status Based on Staff Type -->
-              {% if user.staff_type == 'tutor' %}
-                {% if request.tutor_approved == True %}
-                  <span class="status-badge status-approved">Approved</span>
-                {% elif request.tutor_approved == False %}
-                  <span class="status-badge status-rejected">Rejected</span>
-                {% else %}
-                  <span class="status-badge status-pending">Pending</span>
-                {% endif %}
-              {% elif user.staff_type == 'advisor' %}
-                {% if request.advisor_approved == True %}
-                  <span class="status-badge status-approved">Approved</span>
-                {% elif request.advisor_approved == False %}
-                  <span class="status-badge status-rejected">Rejected</span>
-                {% else %}
-                  <span class="status-badge status-pending">Pending</span>
-                {% endif %}
-              {% elif user.staff_type == 'hod' %}
-                {% if request.hod_approved == True %}
-                  <span class="status-badge status-approved">Approved</span>
-                {% elif request.hod_approved == False %}
-                  <span class="status-badge status-rejected">Rejected</span>
-                {% else %}
-                  <span class="status-badge status-pending">Pending</span>
-                {% endif %}
-              {% endif %}
-            </td>
-            <td>
-              <form method="post" action="{% url 'teacher' %}">
-                {% csrf_token %}
-                <input type="hidden" name="leave_id" value="{{ request.id }}">
-                <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1 w-100">Accept</button>
-                <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger w-100">Reject</button>
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="9" class="text-center text-muted">No leave applications submitted yet.</td> <!-- Updated colspan to 9 -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Leave Portal (Staff)
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link active" href="{% url 'teacher' %}">Portal</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'leave_analytics' %}">Analytics</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'calendar_page' %}">Calendar</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link text-danger-hover" href="{% url 'logout' %}">Logout</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- Staff Profile Banner -->
+      <div class="staff-profile-card">
+        <div class="row align-items-center g-3">
+          <div class="col-md-8">
+            <span class="staff-profile-title">Logged in as {{ user.staff_type|upper }}</span>
+            <h3 class="fw-bold mb-1 mt-1">{{ name }}</h3>
+            <p class="mb-0 text-white-50">Department: {{ department|title }} | Email: {{ email }}</p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <a href="{% url 'leave_analytics' %}" class="btn btn-light text-primary fw-bold btn-sm px-3 py-2 rounded-3 me-2">View Analytics</a>
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm px-3 py-2 rounded-3">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-custom {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="card card-custom p-4">
+        <h4 class="page-header mb-4">Leave Review Inbox</h4>
+        
+        <div class="table-responsive">
+          <table class="table table-custom align-middle">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Reg No</th>
+                <th>Dept</th>
+                <th>Date Range</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>OD Form</th>
+                <th>Medical Form</th>
+                <th>Status</th>
+                <th style="min-width: 220px;">Action / Review</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in leave_requests %}
+              <tr>
+                <!-- Student -->
+                <td class="fw-bold">{{ req.full_name }}</td>
+                <!-- Reg No -->
+                <td><code>{{ req.register_number }}</code></td>
+                <!-- Dept -->
+                <td><span class="badge bg-light text-dark">{{ req.department|upper }}</span></td>
+                <!-- Date Range -->
+                <td class="small">
+                  <div class="text-nowrap">{{ req.from_date|date:"Y-m-d" }}</div>
+                  <div class="text-muted text-center py-0">to</div>
+                  <div class="text-nowrap">{{ req.to_date|date:"Y-m-d" }}</div>
+                </td>
+                <!-- Type -->
+                <td><span class="badge bg-secondary">{{ req.leave_type }}</span></td>
+                <!-- Reason -->
+                <td class="text-wrap" style="max-width: 150px;">{{ req.reason }}</td>
+                
+                <!-- OD Form -->
+                <td>
+                  {% if req.od_form %}
+                    <a href="{% url 'download_od' req.id %}" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Download
+                    </a>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+                
+                <!-- Medical Form -->
+                <td>
+                  {% if req.medical_form %}
+                    <a href="{% url 'download_medical' req.id %}" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Download
+                    </a>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+                
+                <!-- Status badge based on Staff Type -->
+                <td>
+                  {% if user.staff_type == 'tutor' %}
+                    {% if req.tutor_approved == True %}
+                      <span class="status-badge-custom badge-approved">Approved</span>
+                    {% elif req.tutor_approved == False %}
+                      <span class="status-badge-custom badge-rejected">Rejected</span>
+                    {% else %}
+                      <span class="status-badge-custom badge-pending">Pending</span>
+                    {% endif %}
+                  {% elif user.staff_type == 'advisor' %}
+                    {% if req.advisor_approved == True %}
+                      <span class="status-badge-custom badge-approved">Approved</span>
+                    {% elif req.advisor_approved == False %}
+                      <span class="status-badge-custom badge-rejected">Rejected</span>
+                    {% else %}
+                      <span class="status-badge-custom badge-pending">Pending</span>
+                    {% endif %}
+                  {% elif user.staff_type == 'hod' %}
+                    {% if req.hod_approved == True %}
+                      <span class="status-badge-custom badge-approved">Approved</span>
+                    {% elif req.hod_approved == False %}
+                      <span class="status-badge-custom badge-rejected">Rejected</span>
+                    {% else %}
+                      <span class="status-badge-custom badge-pending">Pending</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                
+                <!-- Action / Review -->
+                <td>
+                  <form method="POST" action="{% url 'teacher' %}" class="bg-light p-2 rounded-3 border">
+                    {% csrf_token %}
+                    <input type="hidden" name="leave_id" value="{{ req.id }}">
+                    <textarea name="comment" rows="2" class="form-control form-control-sm mb-2" placeholder="Add optional comment...">{% if user.staff_type == 'tutor' %}{{ req.tutor_comment|default:'' }}{% elif user.staff_type == 'advisor' %}{{ req.advisor_comment|default:'' }}{% elif user.staff_type == 'hod' %}{{ req.hod_comment|default:'' }}{% endif %}</textarea>
+                    
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <button type="submit" name="action" value="approve" class="btn btn-sm btn-success w-100 py-1 d-inline-flex align-items-center justify-content-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          Approve
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger w-100 py-1 d-inline-flex align-items-center justify-content-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-inbox mb-3"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                  <p class="mb-0">No leave applications submitted yet.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

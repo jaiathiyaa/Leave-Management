@@ -1,96 +1,241 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Leave Status - Student Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <style>
-    .form-check { margin-bottom: 4px; }
-    .container { max-width: 960px; }
-    .table td, .table th { vertical-align: middle; }
+    .status-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: #f1f5f9;
+    }
+    .status-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container">
-      <a class="navbar-brand" href="#">Leave Portal</a>
-      <div class="collapse navbar-collapse justify-content-end">
+      <a class="navbar-brand" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Leave Portal
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link" href="{% url 'leave' %}">Apply Leave</a></li>
           <li class="nav-item"><a class="nav-link active" href="{% url 'status' %}">Status</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'calendar_page' %}">Calendar</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link text-danger-hover" href="{% url 'logout' %}">Logout</a></li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <main class="py-4">
+  <main class="main-content">
     <div class="container">
-      <h2 class="mb-4 text-center">Leave Status</h2>
-      {% if leave_entries %}
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Date Range</th>
-                <th>Type</th>
-                <th>Reason</th>
-                <th>Approval Status</th>
-                <th>OD Form</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for leave in leave_entries %}
-              <tr>
-                <td>{{ leave.from_date|date:"Y-m-d" }} to {{ leave.to_date|date:"Y-m-d" }}</td>
-                <td>{{ leave.leave_type }}</td>
-                <td>{{ leave.reason }}</td>
-                <td>
-                  <div class="form-check">
-                    {% if leave.tutor_approved == False %}
-                      <span class="text-danger">❌ Tutor</span>
-                    {% else %}
-                      <input class="form-check-input" type="checkbox" {% if leave.tutor_approved %}checked{% endif %} disabled>
-                      <label class="form-check-label">Tutor</label>
-                    {% endif %}
-                  </div>
-                  <div class="form-check">
-                    {% if leave.advisor_approved == False %}
-                      <span class="text-danger">❌ Advisor</span>
-                    {% else %}
-                      <input class="form-check-input" type="checkbox" {% if leave.advisor_approved %}checked{% endif %} disabled>
-                      <label class="form-check-label">Advisor</label>
-                    {% endif %}
-                  </div>
-                  <div class="form-check">
-                    {% if leave.hod_approved == False %}
-                      <span class="text-danger">❌ HOD</span>
-                    {% else %}
-                      <input class="form-check-input" type="checkbox" {% if leave.hod_approved %}checked{% endif %} disabled>
-                      <label class="form-check-label">HOD</label>
-                    {% endif %}
-                  </div>
-                </td>
-                <td>
-                  {% if leave.leave_type == "OD" and leave.od_form %}
-                    <a href="{% url 'download_od' leave.id %}" class="btn btn-sm btn-outline-primary">Download</a>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div class="alert alert-info text-center">No leave applications found.</div>
+      <h3 class="page-header text-center mb-4">Leave Application Status</h3>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-custom {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
       {% endif %}
+
+      <div class="card card-custom p-4">
+        {% if leave_entries %}
+          <div class="table-responsive">
+            <table class="table table-custom align-middle">
+              <thead>
+                <tr>
+                  <th>Date Range</th>
+                  <th>Type</th>
+                  <th>Reason</th>
+                  <th>Approval Workflow</th>
+                  <th>Comments</th>
+                  <th>Documents</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for leave in leave_entries %}
+                <tr>
+                  <!-- Date Range -->
+                  <td class="fw-medium">
+                    <div class="text-nowrap">{{ leave.from_date|date:"Y-m-d" }}</div>
+                    <div class="small text-muted text-center py-1">to</div>
+                    <div class="text-nowrap">{{ leave.to_date|date:"Y-m-d" }}</div>
+                  </td>
+                  
+                  <!-- Type -->
+                  <td>
+                    <span class="badge rounded-pill bg-secondary px-3 py-2">{{ leave.leave_type }}</span>
+                  </td>
+                  
+                  <!-- Reason -->
+                  <td class="text-wrap" style="max-width: 200px;">
+                    {{ leave.reason }}
+                  </td>
+                  
+                  <!-- Approval Workflow -->
+                  <td>
+                    <div class="status-group">
+                      <!-- Tutor Status -->
+                      <div class="status-item">
+                        <span class="status-label">Tutor:</span>
+                        {% if leave.tutor_approved == True %}
+                          <span class="status-badge-custom badge-approved">Approved</span>
+                        {% elif leave.tutor_approved == False %}
+                          <span class="status-badge-custom badge-rejected">Rejected</span>
+                        {% else %}
+                          <span class="status-badge-custom badge-pending">Pending</span>
+                        {% endif %}
+                      </div>
+
+                      <!-- Advisor Status -->
+                      <div class="status-item">
+                        <span class="status-label">Advisor:</span>
+                        {% if leave.advisor_approved == True %}
+                          <span class="status-badge-custom badge-approved">Approved</span>
+                        {% elif leave.advisor_approved == False %}
+                          <span class="status-badge-custom badge-rejected">Rejected</span>
+                        {% else %}
+                          <span class="status-badge-custom badge-pending">Pending</span>
+                        {% endif %}
+                      </div>
+
+                      <!-- HOD Status -->
+                      <div class="status-item">
+                        <span class="status-label">HOD:</span>
+                        {% if leave.hod_approved == True %}
+                          <span class="status-badge-custom badge-approved">Approved</span>
+                        {% elif leave.hod_approved == False %}
+                          <span class="status-badge-custom badge-rejected">Rejected</span>
+                        {% else %}
+                          <span class="status-badge-custom badge-pending">Pending</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <!-- Comments -->
+                  <td>
+                    {% if leave.tutor_comment or leave.advisor_comment or leave.hod_comment %}
+                      <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#commentsModal{{ leave.id }}">
+                        View
+                      </button>
+                  
+                      <!-- Modal -->
+                      <div class="modal fade" id="commentsModal{{ leave.id }}" tabindex="-1" aria-labelledby="commentsModalLabel{{ leave.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content card-custom">
+                            <div class="modal-header border-0 pb-0">
+                              <h5 class="modal-title fw-bold" id="commentsModalLabel{{ leave.id }}">Staff Comments</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body py-4">
+                              {% if leave.tutor_comment %}
+                                <div class="mb-3 p-3 bg-light rounded-3">
+                                  <div class="fw-bold text-secondary mb-1">Tutor Comment:</div>
+                                  <div class="text-dark">{{ leave.tutor_comment }}</div>
+                                </div>
+                              {% endif %}
+                              {% if leave.advisor_comment %}
+                                <div class="mb-3 p-3 bg-light rounded-3">
+                                  <div class="fw-bold text-secondary mb-1">Advisor Comment:</div>
+                                  <div class="text-dark">{{ leave.advisor_comment }}</div>
+                                </div>
+                              {% endif %}
+                              {% if leave.hod_comment %}
+                                <div class="p-3 bg-light rounded-3">
+                                  <div class="fw-bold text-secondary mb-1">HOD Comment:</div>
+                                  <div class="text-dark">{{ leave.hod_comment }}</div>
+                                </div>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>                
+                  
+                  <!-- Documents -->
+                  <td>
+                    {% if leave.leave_type == "OD" and leave.od_form %}
+                      <a href="{% url 'download_od' leave.id %}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        OD Form
+                      </a>
+                    {% elif leave.leave_type == "Sick" and leave.medical_form %}
+                      <a href="{% url 'download_medical' leave.id %}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Medical Certificate
+                      </a>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Actions -->
+                  <td>
+                    <!-- Disable delete if any approval decision is already made -->
+                    {% if leave.tutor_approved != None or leave.advisor_approved != None or leave.hod_approved != None %}
+                      <span class="text-muted small">Locked</span>
+                    {% else %}
+                      <form action="{% url 'delete_leave' leave.id %}" method="POST" onsubmit="return confirm('Are you sure you want to delete this leave application?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                          Delete
+                        </button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="py-5 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive mb-3"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+            <p class="text-muted mb-0">No leave applications found.</p>
+            <a href="{% url 'leave' %}" class="btn btn-primary-custom mt-3">Apply Now</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </main>
 
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
