@@ -123,18 +123,6 @@ python app/manage.py test main
 
 ---
 
-## 👤 Sample Credentials for Testing
-
-You can use the following default credentials to test the student and staff dashboards (all accounts share the default password: `12345678`):
-
-| Email | Role | Staff Designation |
-| :--- | :--- | :--- |
-| `jaiathiyaa@gmail.com` | Student | N/A |
-| `rishi1@gmail.com` | Staff | Tutor |
-| `darshan@gmail.com` | Staff | Advisor |
-
----
-
 ## 🛡️ License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
